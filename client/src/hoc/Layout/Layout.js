@@ -8,14 +8,14 @@ import SideDrawer from '../../components/Navigation/SideDrawer/SideDrawer';
 
 //higher order component that gives the whole app its look
 const layout = props => {
-    const [siedDrawerIsVisible, setSideDrawerisVisible] = useState(false);
+    const [sideDrawerIsVisible, setSideDrawerisVisible] = useState(false);
     
     const sideDrawerClosedHandler = () => {
         setSideDrawerisVisible(false);
     }
 
     const sideDrawerToggleHandler = () => {
-        setSideDrawerisVisible(!siedDrawerIsVisible); 
+        setSideDrawerisVisible(!sideDrawerIsVisible); 
     }
 
     return (
@@ -25,7 +25,7 @@ const layout = props => {
                 drawerToggleClicked={sideDrawerToggleHandler}/>
             <SideDrawer 
                 isAuth={props.isAuthenticated}
-                open={siedDrawerIsVisible} 
+                open={sideDrawerIsVisible} 
                 closed = {sideDrawerClosedHandler} />
             <main className={styles.Content}>
                 {props.children}

@@ -20,8 +20,8 @@ const withErrorHandler = (WrappedComponent, axios) => {
         //unmounts interceptors when not needed to improve performance
         useEffect(()=> {
             return () => {
-                axios.interceptors.request.eject(this.reqInterceptor);
-                axios.interceptors.request.eject(this.resInterceptor);
+                axios.interceptors.request.eject(reqInterceptor);
+                axios.interceptors.request.eject(resInterceptor);
             }
         }, [reqInterceptor, resInterceptor]);
             

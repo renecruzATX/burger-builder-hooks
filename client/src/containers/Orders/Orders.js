@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {useEffect, useState} from 'react';
 import {connect} from 'react-redux';
 
 import Order from '../../components/Order/Order';
@@ -11,89 +11,91 @@ import OrderDeets from '../../containers/Orders/OrderDeets/OrderDeets';
 import ConfirmDelete from '../../containers/Orders/ConfirmDelete/ConfirmDelete';
 
 //renders past orders on the Orders page
-class Orders extends Component {
-    state = {
-        show: false,
-        deleted: null
-    };
+const orders = props => {
+    const [showOrders, setShowOrders] = useState(false);    
+        
+    const [deleteOrders, setDeleteOrders] = useState(null);
 
     //initializes the orders from the server
-    componentDidMount () {
-        this.props.onFetchOrders(this.props.token);
-    }
+    useEffect(()=>{
+        props.onFetchOrders(props.token);
+    }, []);
+        
+    
 
     //sets the order props so a modal can be shown of the order details
-    orderDetailsHandler (order) {
-        this.props.onSetOrderId(order.order);
-        this.setState({show:true});       
-    }
+    const orderDetailsHandler = (order) => {
+        props.onSetOrderId(order.order);
+        setShowOrders(true);       
+    };
 
     //Sets conditions for a Modal to pop up confirming the deletion of an order
-    confirmDeleteHandler (order) {
-        this.props.onSetOrderId(order._id);
-        this.props.onConfirmDelete(true);
-        this.setState({show:true, deleted: null});       
-    }
+    const confirmDeleteHandler = (order) => {
+        props.onSetOrderId(order._id);
+        props.onConfirmDelete(true);        
+        setShowOrders(true);
+        setDeleteOrders(null);       
+    };
 
     //deletes the selected order
-    deletOrderHandler () {
-        axios.delete('/orders/' + this.props.orderId)
-                .then(response => {
-                    this.setState({
-                        deleted: response.data                        
-                    })
+    const deletOrderHandler = () => {
+        axios.delete('/orders/' + props.orderId)
+                .then(response => {                    
+                    setDeleteOrders(response.data)
                 })
                 .catch(error => error);                  
     }
 
     //closes any modals and resets all states related to the orders
-    closeModalHandler = () => {
-        this.props.onConfirmDelete(false);
-        this.setState({show: false, deleted: null});
-        this.props.onSetOrderId(0);
+    const closeModalHandler = () => {
+        props.onConfirmDelete(false);
+        setShowOrders(false);
+        setDeleteOrders(null);
+        props.onSetOrderId(0);
     }
 
-    render () {
-        let orderDeets = null;
-        if (this.props.orderId && !this.props.confDelete) {
-            orderDeets = <OrderDeets order={this.props.orderId}/>
-        }
 
-        let confirmDelete = null;
-        if (this.props.confDelete) {
-            confirmDelete = <ConfirmDelete deleteOrder={()=>this.deletOrderHandler()}/>
-        }
+    let orderDeets = null;
+    if (props.orderId && !props.confDelete) {
+        orderDeets = <OrderDeets order={props.orderId}/>
+    }
 
-        let orders = <Spinner/>;
-        if (!this.props.loading) {
-            orders = this.props.orders.map(order =>(
-                <div key={(order.id * 7)}>
-                    <Order 
-                    key={order.id}
-                    ingredients={order.order.ingredients}
-                    price = {+order.order.price}
-                    orderDetails={()=>this.orderDetailsHandler(order)}
-                    orderDelete={()=>this.confirmDeleteHandler(order)}/>                        
-                </div>
-            ))
-        };
+    let confirmDelete = null;
+    if (props.confDelete) {
+        confirmDelete = <ConfirmDelete deleteOrder={()=>deletOrderHandler()}/>
+    }
 
-        if (this.state.deleted) {
-            window.alert('Order Deleted!!!!');
-            this.closeModalHandler();        
-            this.props.onFetchOrders(this.props.token);
-        };  
-
-        return (
-            <div>
-                <Modal show={this.state.show} modalClosed={this.closeModalHandler}>
-                    {orderDeets}
-                    {confirmDelete}
-                </Modal>
-                {orders}
+    let orders = <Spinner/>;
+    if (!props.loading) {
+        orders = props.orders.map(order =>(
+            <div key={(order.id * 7)}>
+                <Order 
+                key={order.id}
+                ingredients={order.order.ingredients}
+                price = {+order.order.price}
+                orderDetails={()=>orderDetailsHandler(order)}
+                orderDelete={()=>confirmDeleteHandler(order)}/>                        
             </div>
-        );
-    }
+        ))
+    };
+    //??????
+    if (deleteOrders) {
+        window.alert('Order Deleted!!!!');
+        closeModalHandler();        
+        props.onFetchOrders(props.token);
+    };  
+
+    return (
+        <div>
+            
+            <Modal show={showOrders} modalClosed={closeModalHandler}>
+                {orderDeets}
+                {confirmDelete}
+            </Modal>
+            {orders}
+        </div>
+    );
+    
 };
 
 const mapStateToProps = state => {
@@ -115,4 +117,4 @@ const mapDispatchToProps = dispatch => {
 };
 
 //export default connect(mapStateToProps, mapDispatchToProps)(withErrorHandler(Orders, axios));
-export default connect(mapStateToProps, mapDispatchToProps)(Orders);
+export default connect(mapStateToProps, mapDispatchToProps)(orders);
