@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {useState, useEffect} from 'react';
 import {connect} from 'react-redux';
 import {Redirect} from 'react-router-dom';
 
@@ -9,52 +9,55 @@ import styles from './Auth.module.css';
 import * as actions from '../../store/actions/index';
 
 //renders the login page
-class Auth extends Component {
-    state ={
-        controls: {
-            email: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'email',
-                    placeholder: 'Email Address'
-                },
-                value: '',
-                validation: {
-                    required: true,
-                    isEmail: true
-                },
-                valid: false,
-                touched: false
+const auth = props => {
+    const [controls, setControls] = useState({
+        email: {
+            elementType: 'input',
+            elementConfig: {
+                type: 'email',
+                placeholder: 'Email Address'
             },
-            password: {
-                elementType: 'input',
-                elementConfig: {
-                    type: 'password',
-                    placeholder: 'Password'
-                },
-                value: '',
-                validation: {
-                    required: true,
-                    minLength: 6
-                },
-                valid: false,
-                touched: false
-            }
+            value: '',
+            validation: {
+                required: true,
+                isEmail: true
+            },
+            valid: false,
+            touched: false
         },
-        isSignUp: true
-    };
+        password: {
+            elementType: 'input',
+            elementConfig: {
+                type: 'password',
+                placeholder: 'Password'
+            },
+            value: '',
+            validation: {
+                required: true,
+                minLength: 6
+            },
+            valid: false,
+            touched: false
+        }
+    });
+    
+    const [isSignUp, setIsSignUp] = useState(true);
+        
+
 
     //checks to see if you're currently building a burger and not coming from the main page
     //directs you either to burger builder to create a burger
     //or to the checkout page if you already have built a burger and need to login to continue
-    componentDidMount () {
-        if (!this.props.buildingBurger && this.props.authRedirectPath !== '/') {
-            this.props.onSetAuthRedirectPath();
-        }
-    }
+    useEffect(()=> {
+        if (!props.buildingBurger && props.authRedirectPath !== '/') {
+                    props.onSetAuthRedirectPath();
+                }
+    }, []);
+    
+    
 
     //check if inputs are valid
-    checkValidity(value, rules) {
+    const checkValidity= (value, rules) => {
         let isValid = true;
 
         if (rules.required) {
@@ -73,91 +76,90 @@ class Auth extends Component {
     }
 
     //changes inputs when typing
-    inputChangeHandler = (event, controlName) => {
+    const inputChangeHandler = (event, controlName) => {
         const updatedControls = {
-            ...this.state.controls,
+            ...controls,
             [controlName]: {
-                ...this.state.controls[controlName],
+                ...controls[controlName],
                 value: event.target.value,
-                valid: this.checkValidity(event.target.value, this.state.controls[controlName].validation),
+                valid: checkValidity(event.target.value, controls[controlName].validation),
                 touched: true
             }
         };
-        this.setState({controls: updatedControls});
+        setControls(updatedControls);
+        
     }
 
     //called when Submit button is clicked, passes on login credentials
     //changes state to let app know that user is logged in
-    submitHandler = (event) => {
+    const submitHandler = (event) => {
         event.preventDefault();
-        this.props.onAuth(this.state.controls.email.value, this.state.controls.password.value, this.state.isSignUp);
+        props.onAuth(controls.email.value, controls.password.value, isSignUp);
     }
        
-    render () {
-        //gathers which input is needed from state above
-        const formElementsArray = [];
-        for (let key in this.state.controls) {
-            formElementsArray.push({
-                id: key,
-                config: this.state.controls[key]
-            });
-        }
-        //maps each imput and renders it in the proper order
-        let form = formElementsArray.map(formElement => (
-            <Input 
-                key={formElement.id} 
-                elementType={formElement.config.elementType}
-                elementConfig={formElement.config.elementConfig}
-                value={formElement.config.value}
-                invalid={!formElement.config.valid}
-                shouldValidate={formElement.config.validation}
-                touched={formElement.config.touched}
-                valueType={formElement.id}                        
-                changed={(event) => this.inputChangeHandler(event, formElement.id)} />
-        ));
-        
-        //provides a message that lets the user know mode they are in
-        let message = (!this.state.isSignUp) ? <h3>Welcome Back! Log in for Burger!</h3> : <h3>Sign Up to order a Delicious Burger!</h3>;
-        
-        //provides a spinner if the app is retrieving credentials
-        if (this.props.loading) {
-            form = <Spinner/>
-        }
+    //gathers which input is needed from state above
+    const formElementsArray = [];
+    for (let key in controls) {
+        formElementsArray.push({
+            id: key,
+            config: controls[key]
+        });
+    }
+    //maps each imput and renders it in the proper order
+    let form = formElementsArray.map(formElement => (
+        <Input 
+            key={formElement.id} 
+            elementType={formElement.config.elementType}
+            elementConfig={formElement.config.elementConfig}
+            value={formElement.config.value}
+            invalid={!formElement.config.valid}
+            shouldValidate={formElement.config.validation}
+            touched={formElement.config.touched}
+            valueType={formElement.id}                        
+            changed={(event) => inputChangeHandler(event, formElement.id)} />
+    ));
+    
+    //provides a message that lets the user know mode they are in
+    let message = (!isSignUp) ? <h3>Welcome Back! Log in for Burger!</h3> : <h3>Sign Up to order a Delicious Burger!</h3>;
+    
+    //provides a spinner if the app is retrieving credentials
+    if (props.loading) {
+        form = <Spinner/>
+    }
 
-        //provides an error message during login if error occurs
-        let errorMessage = null;
-        if (this.props.error) {
-            errorMessage = (
-                <p className={styles.ErrorMessage}>{this.props.error}</p>
-            )            
-        }
+    //provides an error message during login if error occurs
+    let errorMessage = null;
+    if (props.error) {
+        errorMessage = (
+            <p className={styles.ErrorMessage}>{props.error}</p>
+        )            
+    }
 
-        //redirects to the correct path after login
-        let authRedirect = null;
-        if (this.props.isAuthenticated) {
-            authRedirect = <Redirect to={this.props.authRedirectPath}/>
-        }
-            
-        return (
-            <div className={styles.Auth}>
-                {authRedirect}
-                {errorMessage}
-                <div className={styles.wrapper}>
-                    <button 
-                        onClick={() => this.setState({isSignUp: false})}
-                        className={styles.button}>Log In</button>
-                    <button 
-                        onClick={() => this.setState({isSignUp: true})}
-                        className={styles.button}>Sign Up</button>
-                </div>
-                {message}
-                <form onSubmit={this.submitHandler}>
-                    {form}
-                    <Button btnType="Success" >SUBMIT</Button>
-                </form>
+    //redirects to the correct path after login
+    let authRedirect = null;
+    if (props.isAuthenticated) {
+        authRedirect = <Redirect to={props.authRedirectPath}/>
+    }
+        
+    return (
+        <div className={styles.Auth}>
+            {authRedirect}
+            {errorMessage}
+            <div className={styles.wrapper}>
+                <button 
+                    onClick={() => setIsSignUp(false)}
+                    className={styles.button}>Log In</button>
+                <button 
+                    onClick={() => setIsSignUp(true)}
+                    className={styles.button}>Sign Up</button>
             </div>
-        );
-    };
+            {message}
+            <form onSubmit={submitHandler}>
+                {form}
+                <Button btnType="Success" >SUBMIT</Button>
+            </form>
+        </div>
+    );    
 };
 
 const mapStateToProps = state => {
@@ -177,4 +179,4 @@ const mapDispatchToProps = dispatch => {
     };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(Auth);
+export default connect(mapStateToProps, mapDispatchToProps)(auth);
